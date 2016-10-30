@@ -1,6 +1,7 @@
 
 var player;
 var platforms;
+var platformsGris;
 var cursors;
 var cielo;
 
@@ -8,13 +9,14 @@ var stars;
 var meteoritos;
 var score = 0;
 var scoreText;
+var endTest;
 var timer;
 var tiempo=0;
 var tiempoText;
 var shadow;
 var offset = new Phaser.Point(10, 8);
 
-var maxNiveles=3;
+var maxNiveles=4;
 var ni;
 
 inicializarCoordenadas();
@@ -33,15 +35,19 @@ function crearNivel(nivel){
 
 function preload() {
     game.load.image('sky', 'assets/sky.png');
+    game.load.image('space', 'assets/starfield.jpg');
     game.load.image('ground1', 'assets/platform.png');
     game.load.image('ground2', 'assets/platform2.png');
     game.load.image('star', 'assets/star.png');
     game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
-    game.load.spritesheet('dude_bad', 'assets/dude_bad.png', 32, 48);
+    game.load.spritesheet('dude_bad1', 'assets/dude_bad1.png', 32, 48);
+    game.load.spritesheet('dude_bad2', 'assets/dude_bad2.png', 32, 48);
     game.load.image('heaven', 'assets/heaven.png');
     game.load.image('meteorito', 'assets/meteorito.png');
     game.load.image('ground', 'assets/ground.png');
     game.load.image('bloque', 'assets/bloque.png');
+    game.load.image('bloqueGris', 'assets/bloqueGris.png');
+    game.load.spritesheet('ball', 'assets/plasmaball.png', 128, 128);
 }
 
 function noHayNiveles() {
@@ -54,14 +60,16 @@ function create() {
         game.physics.startSystem(Phaser.Physics.ARCADE);
 
         //  A simple background for our game
-        game.add.sprite(0, 0, 'sky');
-
+        //game.add.sprite(0, 0, 'sky');
+        game.add.tileSprite(0, 0, game.width, game.height, 'space');
         //  The platforms group contains the ground and the 2 ledges we can jump on
         platforms = game.add.group();
+        platformsGris = game.add.group();
         heaven = game.add.group();
 
         //  We will enable physics for any object that is created in this group
         platforms.enableBody = true;
+        platformsGris.enableBody = true;
         heaven.enableBody = true;
 
         // Here we create the ground.
@@ -77,9 +85,13 @@ function create() {
         //end.body.immovable = true;
 
         //  Now let's create two ledges
-        for(var i=0;i<4;i++){
+        for(var i=0;i<coordenadas[ni].length;i++){
             ledge = platforms.create(coordenadas[ni][i].x,coordenadas[ni][i].y, 'bloque');
-            ledge.body.immovable = true;   
+            ledge.body.immovable = true;
+        }
+        for (var i=0;i<coordenadasGris[ni].length;i++){
+            ledge = platformsGris.create(coordenadasGris[ni][i].x,coordenadasGris[ni][i].y, 'bloqueGris');
+            ledge.body.immovable = true;  
         }
         /*var ledge = platforms.create(400, 400, 'ground');
         ledge.body.immovable = true;
@@ -92,7 +104,7 @@ function create() {
 
         // The player and its settings
         player = game.add.sprite(32, game.world.height - 150, 'dude');
-        player.vidas=5;
+        player.vidas=3;
         /*shadow = game.add.sprite(32, game.world.height - 150, 'dude');
         shadow.tint = 0x000000;
         shadow.alpha = 0.6;*/
@@ -125,7 +137,10 @@ function create() {
         {
             //  Create a star inside of the 'stars' group
             //var star = stars.create(i * 70, 0, 'star');
-            var meteorito = meteoritos.create(i * 70, 0, 'meteorito');
+            var meteorito = meteoritos.create(i * 70, 0, 'ball');
+            meteorito.scale.setTo(0.25,0.25);
+            meteorito.animations.add('pulse');
+            meteorito.play('pulse', 30, true);
 
             //  Let gravity do its thing
             //star.body.gravity.y = 300;
@@ -137,9 +152,9 @@ function create() {
 
         //  The score
         //scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
-        scoreText = game.add.text(16, 22, 'Vidas: 5', { fontSize: '32px', fill: '#000' });
+        scoreText = game.add.text(16, game.world.height-45, 'Vidas: '+player.vidas, { fontSize: '32px', fill: '#FFF' });
 
-        tiempoText=game.add.text(game.world.width-170,22,'Tiempo:0',{ fontSize: '32px', fill: '#000' });
+        tiempoText=game.add.text(game.world.width-170,game.world.height-45,'Tiempo:0',{ fontSize: '32px', fill: '#FFF' });
         
         tiempo=0;
         timer=game.time.events.loop(Phaser.Timer.SECOND,updateTiempo,this);
@@ -153,6 +168,7 @@ function update() {
 
         //  Collide the player and the stars with the platforms
         game.physics.arcade.collide(player, platforms);
+        game.physics.arcade.collide(player, platformsGris);
         //game.physics.arcade.collide(stars, platforms);
 
         //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
@@ -189,7 +205,7 @@ function update() {
         //  Allow the player to jump if they are touching the ground.
         if (cursors.up.isDown && player.body.touching.down)
         {
-            player.body.velocity.y = -350;
+            player.body.velocity.y = -250;
         }
 
 }
@@ -217,12 +233,15 @@ function collectMeteorito (player, meteorito) {
         //  Add and update the score
         /*score += 10;
         scoreText.text = 'Score: ' + score;*/
-        player.loadTexture('dude_bad');
         player.vidas=player.vidas-1;
         scoreText.text = 'Vidas: ' + player.vidas;
         if (player.vidas==0){
             player.kill();
+            endText = game.add.text(240, 280, '¡Has muerto!', { fontSize: '50px', fill: '#FFF' });
             game.time.events.remove(timer);
+            reiniciarNivel();
+        } else {
+            player.loadTexture('dude_bad'+player.vidas);
         }
 
 }
@@ -243,7 +262,11 @@ function lanzarMeteorito(gravedad){
             
     var i=Math.floor((Math.random()*(game.world.width-2)+1));
     //  Create a meteorito inside of the 'meteoritos' group
-    var meteorito = meteoritos.create(i, 60, 'meteorito'); //i*70,0
+    var meteorito = meteoritos.create(i, 60, 'ball'); //i*70,0
+    meteorito.scale.setTo(0.25,0.25);
+    meteorito.animations.add('pulse');
+    meteorito.play('pulse', 30, true);
+
 
     //  Let gravity do its thing
     meteorito.body.gravity.y = gravedad;
