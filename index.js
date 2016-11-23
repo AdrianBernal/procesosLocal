@@ -55,7 +55,6 @@ app.post("/signup",function(request,response){
 	var email = request.body.email;
 	var password = request.body.password;
 	var passwordCifrada = cifrado.encrypt(password);
-	//usuariosCol.find({email:email}).toArray(function(error,usr){
 	limboCol.find({nombre:nombre}).toArray(function(error,usr){	
 		if (usr.length>0){
 			response.send({nombre:undefined});
@@ -246,10 +245,10 @@ function insertarUsuarioLimbo(usu,response){
 			console.log("error");
 		} else {
 			console.log("Nuevo usuario creado");
-			json=limpiarUsuario(result["ops"][0]);
 			enviarEmail(usu);
+			json=limpiarUsuario(result["ops"][0]);
 		}
-		response.send(json);
+		response.send(JSON.stringify(json));
 	});
 }
 

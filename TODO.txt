@@ -1,2 +1,6 @@
 $.cookie("usr",JSON.stringify(data))<-usr- post
 var usr=JSON.parse($.cookie("usr"));
+
+
+Actividades de las fases de XP
+Que es el negocio en XP
