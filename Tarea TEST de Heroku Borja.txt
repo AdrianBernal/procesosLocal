@@ -1,0 +1,11 @@
+Tarea TEST de Heroku Borja
+URL=https://meteorsrainmurderers.herokuapp.com/
+
+- Registro usuario
+- Registrar usuario otra vez
+- Modificar perfil (Nombre, Clave)
+- Jugar - Real
+		- Nivel completado(t)
+- Eliminar ok
+- Inicio sesion
+

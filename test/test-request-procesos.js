@@ -39,6 +39,7 @@ function crearUsuario(email,password){
 			console.log('Usuario creado:     '+body);
 			usuario = JSON.parse( body) ;
 			comprobarUsuario(usuario._id);
+			nivelCompletado(usuario._id, 20);
 			actualizarUsuario(usuario._id,usuario.email,usuario.password);
     		eliminarUsuario(usuario._id);
 		}
@@ -121,6 +122,24 @@ function eliminarUsuario(uid){
 	});
 }
 
+function nivelCompletado(uid,tiempo){
+	var options={
+		url:url+'/nivelCompletado/'+uid+'/'+tiempo,
+		method:'GET',
+		headers:headers
+	}
+
+	request(options,function(error,response,body){
+		if (!error && response.statusCode==200){
+			usuario = JSON.parse(body);
+		}
+		else{
+			console.log(response.statusCode);
+			throw error;
+
+		}
+	});
+}
 
 //testRaiz();
 crearUsuario('test','test');

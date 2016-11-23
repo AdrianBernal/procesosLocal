@@ -7,6 +7,7 @@ var cielo;
 
 var stars;
 var meteoritos;
+var explosions;
 var score = 0;
 var scoreText;
 var endTest;
@@ -15,21 +16,37 @@ var tiempo=0;
 var tiempoText;
 var shadow;
 var offset = new Phaser.Point(10, 8);
+var vivo;
 
 var maxNiveles=4;
 var ni;
 
-inicializarCoordenadas();
+var nivel;
+var coord;
+var gravedad;
 
-function crearNivel(nivel){
-    ni=parseInt(nivel);
+//inicializarCoordenadas();
+
+function crearNivel(data){
+    if (data.nivel<0){
+        intentos = 0;
+        noHayNiveles();
+    } else {
+        game = new Phaser.Game(800, 600, Phaser.AUTO, 'juegoId', { preload: preload, create: create, update: update });
+        nivel=data.id;
+        coord=data.coordenadas;
+        coordGris=data.coordenadasGris;
+        gravedad=data.gravedad;
+    }
+    /*ni=parseInt(nivel);
     if(ni<maxNiveles)
     {
         game = new Phaser.Game(800, 600, Phaser.AUTO, 'juegoId', { preload: preload, create: create, update: update });
     }
     else{
         noHayNiveles();
-    }
+    }*/
+
 }
     
 
@@ -48,6 +65,8 @@ function preload() {
     game.load.image('bloque', 'assets/bloque.png');
     game.load.image('bloqueGris', 'assets/bloqueGris.png');
     game.load.spritesheet('ball', 'assets/plasmaball.png', 128, 128);
+    game.load.spritesheet('kaboom', 'assets/explode.png', 128, 128);
+    game.load.image('dead', 'assets/dead.png');
 }
 
 function noHayNiveles() {
@@ -56,6 +75,8 @@ function noHayNiveles() {
 
 function create() {
 
+        vivo=true;
+    
         //  We're going to be using physics, so enable the Arcade Physics system
         game.physics.startSystem(Phaser.Physics.ARCADE);
 
@@ -85,14 +106,24 @@ function create() {
         //end.body.immovable = true;
 
         //  Now let's create two ledges
-        for(var i=0;i<coordenadas[ni].length;i++){
+        /*for(var i=0;i<coordenadas[ni].length;i++){
             ledge = platforms.create(coordenadas[ni][i].x,coordenadas[ni][i].y, 'bloque');
             ledge.body.immovable = true;
         }
         for (var i=0;i<coordenadasGris[ni].length;i++){
             ledge = platformsGris.create(coordenadasGris[ni][i].x,coordenadasGris[ni][i].y, 'bloqueGris');
             ledge.body.immovable = true;  
+        }*/
+
+        for(var i=0;i<coord.length;i++){
+            ledge = platforms.create(coord[i][0],coord[i][1], 'bloque');
+            ledge.body.immovable = true;
         }
+        for(var i=0;i<coordGris.length;i++){
+            ledge = platformsGris.create(coordGris[i][0],coordGris[i][1], 'bloqueGris');
+            ledge.body.immovable = true;
+        }
+
         /*var ledge = platforms.create(400, 400, 'ground');
         ledge.body.immovable = true;
 
@@ -159,12 +190,28 @@ function create() {
         tiempo=0;
         timer=game.time.events.loop(Phaser.Timer.SECOND,updateTiempo,this);
 
+
+    explosions = game.add.group();
+    explosions.createMultiple(5, 'kaboom');
+    explosions.forEach(setupMeteorito, this);
+    function setupMeteorito(met){
+        //met.anchor.x = 0.5;
+        //met.anchor.y = 0.5;
+        met.scale.setTo(0.3,0.3);
+        met.animations.add('kaboom');
+    }
+
         //  Our controls.
         cursors = game.input.keyboard.createCursorKeys();
         
+
+    
+
 }
 
 function update() {
+
+    
 
         //  Collide the player and the stars with the platforms
         game.physics.arcade.collide(player, platforms);
@@ -180,32 +227,34 @@ function update() {
         //  Reset the players velocity (movement)
         player.body.velocity.x = 0;
 
-        if (cursors.left.isDown)
-        {
-            //  Move to the left
-            player.body.velocity.x = -150;
+        if (vivo) {
+            if (cursors.left.isDown)
+            {
+                //  Move to the left
+                player.body.velocity.x = -150;
 
-            player.animations.play('left');
-        }
-        else if (cursors.right.isDown)
-        {
-            //  Move to the right
-            player.body.velocity.x = 150;
+                player.animations.play('left');
+            }
+            else if (cursors.right.isDown)
+            {
+                //  Move to the right
+                player.body.velocity.x = 150;
 
-            player.animations.play('right');
-        }
-        else
-        {
-            //  Stand still
-            player.animations.stop();
+                player.animations.play('right');
+            }
+            else
+            {
+                //  Stand still
+                player.animations.stop();
 
-            player.frame = 4;
-        }
-        
-        //  Allow the player to jump if they are touching the ground.
-        if (cursors.up.isDown && player.body.touching.down)
-        {
-            player.body.velocity.y = -250;
+                player.frame = 4;
+            }
+            
+            //  Allow the player to jump if they are touching the ground.
+            if (cursors.up.isDown && player.body.touching.down)
+            {
+                player.body.velocity.y = -250;
+            }
         }
 
 }
@@ -226,22 +275,29 @@ function collectStar (player, star) {
 }
 
 function collectMeteorito (player, meteorito) {
-        
+        var explosion = explosions.getFirstExists(false);
+        explosion.reset(meteorito.body.x, meteorito.body.y);
+        explosion.play('kaboom', 30, false, true);
         // Removes the star from the screen
         meteorito.kill();
 
         //  Add and update the score
         /*score += 10;
         scoreText.text = 'Score: ' + score;*/
-        player.vidas=player.vidas-1;
-        scoreText.text = 'Vidas: ' + player.vidas;
-        if (player.vidas==0){
-            player.kill();
-            endText = game.add.text(240, 280, '¡Has muerto!', { fontSize: '50px', fill: '#FFF' });
-            game.time.events.remove(timer);
-            reiniciarNivel();
-        } else {
-            player.loadTexture('dude_bad'+player.vidas);
+        if (player.vidas>0) {
+            player.vidas=player.vidas-1;
+            scoreText.text = 'Vidas: ' + player.vidas;
+            if (player.vidas==0){
+                //player.kill();
+                player.loadTexture('dead');
+                player.body.setSize(48,32);
+                vivo=false;
+                endText = game.add.text(240, 280, '¡Has muerto!', { fontSize: '50px', fill: '#FFF' });
+                game.time.events.remove(timer);
+                reiniciarNivel();
+            } else {
+                player.loadTexture('dude_bad'+player.vidas);
+            }
         }
 
 }
@@ -249,7 +305,7 @@ function collectMeteorito (player, meteorito) {
 function endNivel (player, heaven) {
     player.kill();
     game.time.events.remove(timer);
-    nivelCompletado(tiempo);
+    nivelCompletado(tiempo, player.vidas);
 }
 
 function muereMeteorito(platform,meteorito){
@@ -262,7 +318,7 @@ function lanzarMeteorito(gravedad){
             
     var i=Math.floor((Math.random()*(game.world.width-2)+1));
     //  Create a meteorito inside of the 'meteoritos' group
-    var meteorito = meteoritos.create(i, 60, 'ball'); //i*70,0
+    var meteorito = meteoritos.create(i, 0, 'ball'); //i*70,0
     meteorito.scale.setTo(0.25,0.25);
     meteorito.animations.add('pulse');
     meteorito.play('pulse', 30, true);
@@ -274,4 +330,7 @@ function lanzarMeteorito(gravedad){
     //  This just gives each meteorito a slightly random bounce value
     //meteorito.body.bounce.y = 0.7 + Math.random() * 0.2;
      meteorito.checkWorldBounds = true;
+
+
+    
 }

@@ -2,7 +2,7 @@
 <html lang="en"> 
 <head> 
 	<meta charset="UTF-8" />
-    <title>Phaser - Making your first game, part 9</title>
+    <title>Juego</title>
 
     <script type="text/javascript" src="lib/phaser.min.js" ></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
@@ -13,6 +13,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon.ico">
+
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
+    <!-- FIN DataTables -->
+
+    <!-- Login y Registro -->
+        <!-- Website Font style -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+    <!-- FIN Login y Registro -->
+    
 </head>
 <body>
     <nav class="navbar navbar-default">
@@ -21,8 +32,8 @@
                 <a class="navbar-brand" href="">Conquista Niveles</a>
             </div>
             <ul class="nav navbar-nav">
-                <li class="active"><a href="">Inicio</a></li>
-                <li><a onclick="obtenerResultados()" href="#">Resultados</a></li>
+                <li class="active"><a onclick="inicio()" href="#">Inicio</a></li>
+                <li><a onclick="obtenerResultados(true)" href="#">Resultados</a></li>
                 <li><a onclick="modificarPerfil()" href="#">Modificar perfil</a></li>
                 <li><a onclick="reset()" href="#">Salir</a></li>
             </ul>
@@ -34,6 +45,7 @@
                 <div id="control"></div>
             </div>
             <div class="col-sm-8">
+                <div id="mensajes"></div>
                 <div id="juegoId"></div>
             </div>
         </div>
