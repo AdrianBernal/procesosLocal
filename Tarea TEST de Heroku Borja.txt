@@ -1,11 +1,23 @@
 Tarea TEST de Heroku Borja
 URL=https://meteorsrainmurderers.herokuapp.com/
 
-- Registro usuario
-- Registrar usuario otra vez
-- Modificar perfil (Nombre, Clave)
-- Jugar - Real
-		- Nivel completado(t)
-- Eliminar ok
-- Inicio sesion
+- Objetivo: Esta tarea consiste en realizar un test a la aplicación de un compañero como si fueramos el Product Owner
 
+- Test:
+	- Registro usuario:
+		*Cuantro introduzco la contraseña en registrar usuario es visible.
+	- Registrar usuario otra vez:
+		*Cuando intento registrarme otra vez con el mismo correo no me deja pero no me sale ningún mensaje de error. Sólo desaparece el botón registrar.
+	- Modificar perfil (Nombre, Clave)
+		*Cuando modifico el perfil me redirige a registro
+		*Si cambio la contraseña no me deja entrar
+		*Si actualizo el email no comprueba si es un email válido, pero al hacer el login si. Por lo que entonces ya no me deja entrar.
+	- Jugar - Real
+			*No salta cuando estoy moviendome a la derecha o a la izquierda
+			*Si muero no me deja reinicar el nivel.
+			- Nivel completado(t)
+	- Resultados:
+		*Da un warning al mostrar los resultados pero funciona y se muestran.
+		*No se muestran los resultados directamente.
+	- Eliminar usuario: OK!
+	- Inicio sesion: OK! No me deja despues de eliminarlo
