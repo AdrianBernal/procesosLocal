@@ -25,7 +25,7 @@ function crearUsuario(nombre,email,password){
 	}
 
 	console.log("--------------------------------------------------------");
-	console.log("1. Intentar crear el usuario Pepe con email pepe@pepe.es y con clave pepe");
+	console.log("1. Intentar crear el usuario "+nombre+" con email "+email+" y con clave "+password+"");
 	console.log("--------------------------------------------------------");
 	request(options,function(error,response,body){
 		if (!error && response.statusCode==200){
@@ -114,7 +114,6 @@ function iniciarSesion(nombre,password){
     		if (jsonResponse.email!=""){
 	    		console.log("Usuario "+jsonResponse.nombre+" ha iniciado la sesión \n");
 	    		actualizarUsuario(jsonResponse._id,jsonResponse.nombre,password);
-	    		//eliminarUsuario(jsonResponse._id);
 	    	}
 	    	else{
 	    		console.log("El usuario "+email+" NO pudo iniciar la sesión \n");
@@ -384,4 +383,4 @@ function obtenerResultados2(){
 	});
 }
 
-crearUsuario('Pueba1','a2b1987@gmail.com','pepe');
+crearUsuario('Pepe','pepe@pepe.com','pepe');

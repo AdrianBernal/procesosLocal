@@ -278,6 +278,7 @@ function enviarEmail(usuario){
 }
 
 function limpiarUsuario(usuario){
+	//ToDo: Descomentar para poner en producción
 	//usuario.key=undefined;
 	usuario.email=undefined;
 	usuario.password=undefined;

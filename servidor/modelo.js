@@ -24,7 +24,7 @@ function Juego(){
 		this.resultados.push(resultado);
 	}
 	this.eliminarResultado=function(nombre){
-		this.resultados=_.without(this.resultados, _.findWhere(this.usuarios,{nombre:nombre}));
+		this.resultados=_.without(this.resultados, _.findWhere(this.resultados,{nombre:nombre}));
 	}
 }
 
