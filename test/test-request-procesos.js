@@ -11,9 +11,13 @@ var headers={
 
 console.log("===========================================")
 console.log(" Inicio de las pruebas del API REST:");
-console.log(" 1. Crear usuario - 2. Iniciar sesión");
-console.log(" 3. Modificar usuario - 4. Eliminar usuario");
-console.log(" 5. El usuario no puede iniciar sesión");
+console.log(" 1. Crear usuario - 2. Confirmar usuario");
+console.log(" 3. Comprobar usuario - 4. Inicicar sesion");
+console.log(" 5. Actualizar usuario - 6. Pedir nivel actual");
+console.log(" 7. Sumar intento - 8. Completar nivel");
+console.log(" 9. Resetear nivel - 10. Obtener resultados");
+console.log(" 11. Eliminar usuario - 12. Intentar iniciar sesión");
+console.log(" 13. Obtener resutlados otra vez");
 console.log("========================================== \n")
 
 function crearUsuario(nombre,email,password){
@@ -58,7 +62,7 @@ function confirmarUsuario(id,key,nombre,password){
 
 	request(options,function(error,response,body){
 		if (!error && response.statusCode==200){
-			console.log("Usuario "+nombre+" confirmado");
+			console.log("Usuario "+nombre+" confirmado \n");
 			comprobarUsuario(id,nombre,password);
 		}
 		else{
@@ -76,7 +80,7 @@ function comprobarUsuario(id,nombre,password){
 	}
 
 	console.log("--------------------------------------------------------");
-	console.log("3. Se comprueba que el usuario Pepe con email pepe@pepe.es está confirmado \n");
+	console.log("3. Se comprueba que el usuario Pepe con email pepe@pepe.es está confirmado");
 	console.log("--------------------------------------------------------");
 
 	request(options,function(error,response,body){
@@ -104,19 +108,19 @@ function iniciarSesion(nombre,password){
 		form:{nombre:nombre,password:password}
 	}
 
-	console.log("---------------------------------------------");
+	console.log("--------------------------------------------------------");
 	console.log("4. El usuario: "+nombre+" intenta iniciar sesión");
-	console.log("---------------------------------------------");
+	console.log("--------------------------------------------------------");
 	
 	request(options,function(error,response,body){
 		if (!error && response.statusCode==200){
 			var jsonResponse = JSON.parse( body) ;
-    		if (jsonResponse.email!=""){
+    		if (jsonResponse.nombre!=undefined){
 	    		console.log("Usuario "+jsonResponse.nombre+" ha iniciado la sesión \n");
 	    		actualizarUsuario(jsonResponse._id,jsonResponse.nombre,password);
 	    	}
 	    	else{
-	    		console.log("El usuario "+email+" NO pudo iniciar la sesión \n");
+	    		console.log("El usuario "+nombre+" NO pudo iniciar la sesión \n");
 	    	}
 		}
 		else{
@@ -133,9 +137,9 @@ function actualizarUsuario(id,nombre,password){
 		form:{id:id,nombre:nombre+'Actualizado',passwordOld:password,passwordNew:password+'Actualizada'}
 	}
 
-	console.log("---------------------------------------------");
+	console.log("--------------------------------------------------------");
 	console.log("5. El usuario: "+nombre+" actualiza el nombre");
-	console.log("---------------------------------------------");
+	console.log("--------------------------------------------------------");
 	
 	request(options,function(error,response,body){
 		if (!error && response.statusCode==200){
@@ -162,9 +166,9 @@ function pedirNivel(id,nombre,password){
 		headers:headers
 	}
 
-	console.log("---------------------------------------------");
-	console.log("6. Se pide el nivel para el usuario: "+nombre+" \n");
-	console.log("---------------------------------------------");
+	console.log("--------------------------------------------------------");
+	console.log("6. Se pide el nivel para el usuario: "+nombre);
+	console.log("--------------------------------------------------------");
 	
 	request(options,function(error,response,body){
 		if (!error && response.statusCode==200){
@@ -191,9 +195,9 @@ function sumarIntento(id,nombre,password){
 		headers:headers
 	}
 
-	console.log("---------------------------------------------");
-	console.log("7. Se suma un intento a "+nombre+" \n");
-	console.log("---------------------------------------------");
+	console.log("--------------------------------------------------------");
+	console.log("7. Se suma un intento a "+nombre);
+	console.log("--------------------------------------------------------");
 	
 	request(options,function(error,response,body){
 		if (!error && response.statusCode==200){
@@ -219,9 +223,9 @@ function nivelCompletado(id,nombre,password,tiempo,vidas){
 		headers:headers
 	}
 
-	console.log("---------------------------------------------");
-	console.log("8. Se completa el nivel para "+nombre+" con "+tiempo+" segundos y "+vidas+" vidas\n");
-	console.log("---------------------------------------------");
+	console.log("--------------------------------------------------------");
+	console.log("8. Se completa el nivel para "+nombre+" con "+tiempo+" segundos y "+vidas+" vidas");
+	console.log("--------------------------------------------------------");
 
 	request(options,function(error,response,body){
 		if (!error && response.statusCode==200){
@@ -248,9 +252,9 @@ function resetNiveles(id,nombre,password){
 		headers:headers
 	}
 
-	console.log("---------------------------------------------");
-	console.log("9. Se resetea el nivel para "+nombre+" \n");
-	console.log("---------------------------------------------");
+	console.log("--------------------------------------------------------");
+	console.log("9. Se resetea el nivel para "+nombre);
+	console.log("--------------------------------------------------------");
 
 	request(options,function(error,response,body){
 		if (!error && response.statusCode==200){
@@ -277,9 +281,9 @@ function obtenerResultados(id,nombre,password){
 		headers:headers
 	}
 
-	console.log("---------------------------------------------");
-	console.log("10. Obtenemos los resultados almacenados \n");
-	console.log("---------------------------------------------");
+	console.log("--------------------------------------------------------");
+	console.log("10. Obtenemos los resultados almacenados");
+	console.log("--------------------------------------------------------");
 
 	request(options,function(error,response,body){
 		if (!error && response.statusCode==200){
@@ -307,9 +311,9 @@ function eliminarUsuario(id,password){
 		form:{password:password}
 	}
 
-	console.log("---------------------------------------------");
+	console.log("--------------------------------------------------------");
 	console.log("11. Se intenta eliminar el usuario con id: "+id);
-	console.log("---------------------------------------------");
+	console.log("--------------------------------------------------------");
 	request(options,function(error,response,body){
 		if (!error && response.statusCode==200){
 			var jsonResponse = JSON.parse( body) ;
@@ -318,7 +322,7 @@ function eliminarUsuario(id,password){
 	    		iniciarSesion2('pepe@pepe.es','pepe');
 	    	}
 	    	else{
-	    		console.log("El usuarios no existe \n");
+	    		console.log("El usuario no existe \n");
 	    	}
 		}
 		else{
@@ -335,9 +339,9 @@ function iniciarSesion2(nombre,password){
 		form:{nombre:nombre,password:password}
 	}
 
-	console.log("---------------------------------------------");
+	console.log("--------------------------------------------------------");
 	console.log("12. El usuario: "+nombre+" intenta iniciar sesión");
-	console.log("---------------------------------------------");
+	console.log("--------------------------------------------------------");
 	
 	request(options,function(error,response,body){
 		if (!error && response.statusCode==200){
@@ -362,9 +366,9 @@ function obtenerResultados2(){
 		headers:headers
 	}
 
-	console.log("---------------------------------------------");
-	console.log("13. Obtenemos los resultados almacenados \n");
-	console.log("---------------------------------------------");
+	console.log("--------------------------------------------------------");
+	console.log("13. Obtenemos los resultados almacenados");
+	console.log("--------------------------------------------------------");
 
 	request(options,function(error,response,body){
 		if (!error && response.statusCode==200){
@@ -383,4 +387,6 @@ function obtenerResultados2(){
 	});
 }
 
-crearUsuario('Pepe','pepe@pepe.com','pepe');
+//crearUsuario('Pepe','pepe@pepe.com','pepe');
+
+(function(){console.log('hola')})
