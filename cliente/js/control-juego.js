@@ -266,7 +266,7 @@ function comunicarNivelCompletado(tiempo, vidas){
 			$.cookie("nivel",datos.nivel);
 			$.cookie("intentos",datos.intentos);
 			obtenerResultados(false);
-			mostrarInfoJugador();
+			//mostrarInfoJugador();
 	});	
 }
 
