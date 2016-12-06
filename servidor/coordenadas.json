@@ -2,4 +2,8 @@
 ,{"gravedad":50,"coordenadas":[[700,450],[500,350],[700,250],[500,150]],"coordenadasGris":[]}
 ,{"gravedad":50,"coordenadas":[[700,450],[700,250]],"coordenadasGris":[[500,350],[500,150]]}
 ,{"gravedad":50,"coordenadas":[],"coordenadasGris":[[80,456],[240,376],[400,296],[560,216],[720,136]]}
+,{"gravedad":150,"coordenadas":[[80,456],[240,376],[400,296],[560,216],[720,136]],"coordenadasGris":[]}
+,{"gravedad":150,"coordenadas":[[700,450],[500,350],[700,250],[500,150]],"coordenadasGris":[]}
+,{"gravedad":150,"coordenadas":[[700,450],[700,250]],"coordenadasGris":[[500,350],[500,150]]}
+,{"gravedad":150,"coordenadas":[],"coordenadasGris":[[80,456],[240,376],[400,296],[560,216],[720,136]]}
 ]

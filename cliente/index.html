@@ -32,10 +32,10 @@
                 <a class="navbar-brand" href="">Conquista Niveles</a>
             </div>
             <ul class="nav navbar-nav">
-                <li class="active"><a onclick="inicio()" href="#">Inicio</a></li>
-                <li><a onclick="obtenerResultados(true)" href="#">Resultados</a></li>
-                <li><a onclick="modificarPerfil()" href="#">Modificar perfil</a></li>
-                <li><a onclick="reset()" href="#">Salir</a></li>
+                <li id="inicioTab" class="active"><a onclick="inicio()" href="#"><i class="fa fa-home fa-fw" aria-hidden="true"></i>&nbsp;Inicio</a></li>
+                <li id="resultadosTab"><a onclick="obtenerResultados(true)" href="#"><i class="fa fa-bar-chart fa-fw" aria-hidden="true"></i>&nbsp;Resultados</a></li>
+                <li id="modificarTab"><a onclick="modificarPerfil()" href="#"><i class="fa fa-user fa-fw" aria-hidden="true"></i>&nbsp;Modificar perfil</a></li>
+                <li><a onclick="reset()" href="#"><i class="fa fa-sign-out fa-fw" aria-hidden="true"></i>&nbsp;Salir</a></li>
             </ul>
         </div>
     </nav>
@@ -51,7 +51,6 @@
         </div>
     </div>
     <script type="text/javascript" src="js/control-juego.js" ></script>
-    <script type="text/javascript" src="js/coordenadas.js"></script>
     <script type="text/javascript" src="js/juego.js" ></script>
     <script type="text/javascript">inicio();</script>  
 </body>

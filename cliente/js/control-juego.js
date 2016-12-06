@@ -1,6 +1,4 @@
 //Funciones que modifican el index
-//var url="http://127.0.0.1:1338/";
-var url=window.location.href.split('#')[0];
 var game;
 
 $('.toggle-sidebar').click(function(){
@@ -10,6 +8,9 @@ $('.toggle-sidebar').click(function(){
 
 function inicio(){
 	if (borrarJuego(true)){
+		$('#inicioTab').addClass('active');
+		$('#resultadosTab').removeClass('active');
+		$('#modificarTab').removeClass('active');
 		comprobarUsuario();
 	}
 }
@@ -51,7 +52,6 @@ function comprobarNivel(){
 			$('#mensajes').append("<h2 id='enh'>Lo siento, no tenemos más niveles</h2>");
 			$('#volverEmpezarBtn').removeClass('hidden');
 		} else if (game==undefined){
-			console.log('siguiente boton unhidden');
 			$('#siguienteBtn').removeClass('hidden');
 		}
 }
@@ -87,6 +87,9 @@ function mostrarResultados(datos,confirmar){
 function reset(){
 	if (borrarJuego(true)){
 		borrarCookies();
+		$('#inicioTab').addClass('active');
+		$('#resultadosTab').removeClass('active');
+		$('#modificarTab').removeClass('active');
 		mostrarLogin();
 	}
 }
@@ -125,7 +128,7 @@ function validarEmail( email ) {
 
 function mostrarEmailEnviado(){
 	if (borrarJuego(true)){
-		$('#juegoId').append('<div id="cabecera"><h3>Se le ha enviado un email de confirmación</h3></div>');
+		$('#juegoId').append('<div id="cabecera"><h3>Enhorabuena! Se ha registrado correctamente.</h3><h4>Se le ha enviado un email de confirmación.<br>Por favor, revise su buzón de correo.</h4></div>');
 	}
 }
 
@@ -141,6 +144,11 @@ function mostrarLogin(){
 		$('#refRegistrar').on('click',function(){
 			mostrarRegistro();
 		});
+		$("#passwordInput").keyup(function(event){
+    		if(event.keyCode == 13){
+    	    	$("#loginBtn").click();
+    		}
+		});
 	});
 }
 
@@ -154,6 +162,11 @@ function mostrarRegistro(){
 				var password=$('#passwordInput').val();
 				registroUsuario(nombre,email,password);
 			}
+		});
+		$("#passwordRepetidoInput").keyup(function(event){
+    		if(event.keyCode == 13){
+    	    	$("#registroBtn").click();
+    		}
 		});
 	});
 }
@@ -210,6 +223,9 @@ function comprobarInput(){
 
 function modificarPerfil(){
 	if ($.cookie('id')!=undefined) {
+		$('#inicioTab').removeClass('active');
+		$('#resultadosTab').removeClass('active');
+		$('#modificarTab').addClass('active');
 		$('#control').load('../html/actualizarUsuario.html',function(){
 			$('#nombreInput').val($.cookie('nombre'));
 			$('#actualizarBtn').on('click',function(){
@@ -243,7 +259,7 @@ function comprobarUsuario(){
 	var id=$.cookie('id');
 	if (id!=undefined){
 		//Comprobar id
-		$.getJSON(url+'comprobarUsuario/'+id,function(datos){
+		$.getJSON('comprobarUsuario/'+id,function(datos){
 			//if(datos.nivel<0){
 			if(datos.nivel<0){
 				//borrar Cookies
@@ -262,17 +278,17 @@ function comprobarUsuario(){
 
 function comunicarNivelCompletado(tiempo, vidas){
 	var id=$.cookie("id");
-	$.getJSON(url+'nivelCompletado/'+id+"/"+tiempo+"/"+vidas,function(datos){
+	$.getJSON('nivelCompletado/'+id+"/"+tiempo+"/"+vidas,function(datos){
 			$.cookie("nivel",datos.nivel);
 			$.cookie("intentos",datos.intentos);
 			obtenerResultados(false);
-			//mostrarInfoJugador();
+			mostrarInfoJugador();
 	});	
 }
 
 function sumarIntento(){
 	var id=$.cookie("id");
-	$.getJSON(url+'sumarIntento/'+id,function(datos){
+	$.getJSON('sumarIntento/'+id,function(datos){
 			$.cookie("intentos",datos.intentos);
 			mostrarInfoJugador();
 	});	
@@ -281,18 +297,19 @@ function sumarIntento(){
 
 function resetNiveles(){
 	var id=$.cookie("id");
-	$.getJSON(url+'resetNiveles/'+id,function(datos){
+	$.getJSON('resetNiveles/'+id,function(datos){
 			$.cookie("nivel",datos.nivel);
 			mostrarInfoJugador();
 	});	
 }
 
 function obtenerResultados(confirmar){
-	//var id=$.cookie("id");
-	//$.getJSON(url+'obtenerResultados/'+id,function(datos){
-	$.getJSON(url+'obtenerResultados/',function(datos){
+	$('#inicioTab').removeClass('active');
+	$('#resultadosTab').addClass('active');
+	$('#modificarTab').removeClass('active');
+	$.getJSON('obtenerResultados/',function(datos){
 		mostrarResultados(datos,confirmar);
-		mostrarInfoJugador();
+		//mostrarInfoJugador();
 	});
 }
 
@@ -374,7 +391,7 @@ function actualizarUsuario(nombreText, passwordOldText, passwordNewText){
 function pedirNivel(){
 	var uid=$.cookie("id");
 	if (uid!=undefined){
-		$.getJSON(url+"pedirNivel/"+uid,function(data){
+		$.getJSON("pedirNivel/"+uid,function(data){
 			$('#siguienteBtn').addClass('hidden');
 			$('#mensajes').empty();
 			$('#juegoId').empty();

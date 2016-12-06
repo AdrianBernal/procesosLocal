@@ -1,16 +1,14 @@
 
 var fs=require("fs");
-//var config=JSON.parse(fs.readFileSync("config.json"));
-//var url="http://procesos.herokuapp.com/";
-var url="http://127.0.0.1:5000/";
-
 var exp=require("express");
 var app=exp();
 var bodyParser=require("body-parser");
 var mongo=require("mongodb").MongoClient;
 var ObjectId=require("mongodb").ObjectId;
 var modelo=require("./servidor/modelo.js");
-var cifrado = require("./servidor/cifrado.js");
+var cifrado=require("./servidor/cifrado.js");
+var moduloEmail=require('./servidor/email.js');
+var persistencia=require('./servidor/persistencia.js');
 
 
 var fm=new modelo.JuegoFM("./servidor/coordenadas.json");
@@ -19,21 +17,6 @@ var juego=fm.makeJuego(fm.juego,fm.array);
 var usuariosCol;
 var resultadosCol;
 var limboCol;
-
-/***************** EMAIL *********************/
-var nodemailer = require('nodemailer');
-var sgTransport = require('nodemailer-sendgrid-transport');
-
-var options = {
-  auth: {
-    api_user: 'a2b_87',
-    api_key: '100_Procesos'
-  }
-}
-
-var client = nodemailer.createTransport(sgTransport(options));
-
-/***************** EMAIL EMAIL *********************/
 
 app.set('port', (process.env.PORT || 5000));
 
@@ -64,7 +47,11 @@ app.post("/signup",function(request,response){
 					response.send({nombre:undefined});
 				} else {
 					var usuario=new modelo.Usuario(nombre,email,passwordCifrada);
-					insertarUsuarioLimbo(usuario,response);		
+					//insertarUsuarioLimbo(usuario,response);
+					persistencia.insertarUsuario(limboCol,usuario,function(usu,result){
+						moduloEmail.enviarEmail(usu);
+						response.send(limpiarUsuario(usu));
+					});
 				}
 			});
 		}
@@ -77,16 +64,19 @@ app.get("/comprobarUsuario/:id",function(request,response){
 	var json={nivel:-1};
 	if (usuario!=undefined) {
 		json=JSON.stringify(limpiarUsuario(usuario));
+		response.send(json);
 	} else {
 		usuariosCol.find({_id:ObjectId(id)}).toArray(function(error,usr){
 			if (usr.length>0){
 				var usuario=usr[0];
 				juego.agregarUsuario(usuario);
 				json=JSON.stringify(limpiarUsuario(usuario));
+				response.send(json);
+			} else {
+				response.send(json);
 			}
 		});
-	}
-	response.send(json);	
+	}	
 })
 
 app.get('/nivelCompletado/:id/:tiempo/:vidas',function(request,response){
@@ -165,7 +155,6 @@ app.delete("/eliminarUsuario/:id",function(request,response){
    			json={"resultados":1};
    			console.log("Usuario eliminado");
    			var usuario=juego.obtenerUsuario(id);
-   			juego.eliminarUsuario(id);
    			resultadosCol.remove({nombre:usuario.nombre},function(err,result){
 				if (result.result.n==0){
 			    	console.log("No se pudo eliminar los resultados");
@@ -174,6 +163,7 @@ app.delete("/eliminarUsuario/:id",function(request,response){
 			   		console.log("Resultados eliminados");
 			  	}
 			});
+			juego.eliminarUsuario(id);
   		}
   		response.send(json);
  	});
@@ -220,65 +210,51 @@ app.get("/confirmarUsuario/:nombre/:key",function(request,response){
 			console.log("El usuario no exisste");
 			response.send('<h1>La cuenta ya esta activada');
 		} else {
-			insertarUsuario(usr[0],response);
+			//insertarUsuario(usr[0],response);
+			persistencia.insertarUsuario(usuariosCol,usr[0],function(usu){
+				response.redirect('/');
+				persistencia.eliminarUsuario(limboCol,usu);
+				juego.agregarUsuario(usu);
+			});
 		}
 	});
 });
 
-function insertarUsuario(usu,response){
-	usuariosCol.insert(usu,function(err){
-		if(err){
-			console.log("error");
-		} else {
-			console.log("Nuevo usuario creado");
-			limboCol.remove({key:usu.key},function(error,result){
-				if(!error){
-					console.log('Usuario eliminado del limbo');
-				}
-			});
-			juego.agregarUsuario(usu);
-			response.redirect(url);
-		}
-	});
-}
+// function insertarUsuario(usu,response){
+// 	usuariosCol.insert(usu,function(err){
+// 		if(err){
+// 			console.log("error");
+// 		} else {
+// 			console.log("Nuevo usuario creado");
+// 			limboCol.remove({key:usu.key},function(error,result){
+// 				if(!error){
+// 					console.log('Usuario eliminado del limbo');
+// 				}
+// 			});
+// 			juego.agregarUsuario(usu);
+// 			response.redirect('/');
+// 			//ToDo: Poner cuenta activada.
+// 		}
+// 	});
+// }
 
-function insertarUsuarioLimbo(usu,response){
-	limboCol.insert(usu,function(err,result){
-		var json={'nombre':undefined};
-		if(err){
-			console.log("error");
-		} else {
-			console.log("Nuevo usuario creado");
-			enviarEmail(usu);
-			json=limpiarUsuario(result["ops"][0]);
-		}
-		response.send(JSON.stringify(json));
-	});
-}
+// function insertarUsuarioLimbo(usu,response){
+// 	limboCol.insert(usu,function(err,result){
+// 		var json={'nombre':undefined};
+// 		if(err){
+// 			console.log("error");
+// 		} else {
+// 			console.log("Nuevo usuario creado");
+// 			moduloEmail.enviarEmail(usu);
+// 			json=limpiarUsuario(result["ops"][0]);
+// 		}
+// 		response.send(JSON.stringify(json));
+// 	});
+// }
 
 function insertarResultado(resultado){
 	juego.agregarResultado(resultado);
 	resultadosCol.insert(resultado);
-}
-
-function enviarEmail(usuario){
-	var email = {
-	  from: 'procesos@gmail.com',
-	  to: usuario.email,
-	  subject: 'Confirmar cuenta',
-	  text: 'Confirmar cuenta',
-	  html: '<a href="'+url+'confirmarUsuario/'+usuario.nombre+'/'+usuario.key+'">Juego Procesos confirmación</a>'
-	};
-
-	client.sendMail(email, function(err, info){
-	    if (err ){
-	      console.log(err);
-	    }
-	    else {
-	      console.log('Message sent: ' + info.response);
-	      ok=true;
-	    }
-	});
 }
 
 function limpiarUsuario(usuario){
@@ -288,11 +264,6 @@ function limpiarUsuario(usuario){
 	usuario.password=undefined;
 	return usuario;
 };
-
-function cargarUsuarios(){
-	juego.usuarios=[];
-	usuariosCol.find().forEach(function (usr){juego.agregarUsuario(usr);});
-}
 
 function cargarResultados(){
 	juego.resultados=[];
@@ -316,7 +287,6 @@ mongo.connect("mongodb://pepe:pepe@ds048719.mlab.com:48719/usuarioscn", function
 			} else {
 				console.log("Tenemos la colección usuario");
 				usuariosCol=col;
-				//cargarUsuarios();
 			}
 		});
 		db.collection("resultados",function(error,col){

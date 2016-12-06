@@ -7,6 +7,7 @@ var cielo;
 
 var stars;
 var meteoritos;
+var vidas;
 var explosions;
 var score = 0;
 var scoreText;
@@ -18,7 +19,7 @@ var shadow;
 var offset = new Phaser.Point(10, 8);
 var vivo;
 
-var maxNiveles=4;
+var maxNiveles=8;
 var ni;
 
 var nivel;
@@ -67,6 +68,7 @@ function preload() {
     game.load.spritesheet('ball', 'assets/plasmaball.png', 128, 128);
     game.load.spritesheet('kaboom', 'assets/explode.png', 128, 128);
     game.load.image('dead', 'assets/dead.png');
+    game.load.image('vida', 'assets/firstaid.png');
 }
 
 function noHayNiveles() {
@@ -154,12 +156,15 @@ function create() {
         //  Finally some stars to collect
         stars = game.add.group();
         meteoritos = game.add.group();
+        vidas = game.add.group();
 
         //  We will enable physics for any star that is created in this group
         stars.enableBody = true;
         meteoritos.enableBody = true;
+        vidas.enableBody = true;
     /****/
         stars.physicsBodyType = Phaser.Physics.ARCADE;
+        vidas.physicsBodyType = Phaser.Physics.ARCADE;
         //meteoritos.physicsBodyType = Phaser.Physics.ARCADE;
 
         //game.physics.arcade.enable(platforms);
@@ -175,7 +180,7 @@ function create() {
 
             //  Let gravity do its thing
             //star.body.gravity.y = 300;
-            meteorito.body.gravity.y = 50;
+            meteorito.body.gravity.y = gravedad + (gravedad * Math.random() * 0.2);
 
             //  This just gives each star a slightly random bounce value
             //star.body.bounce.y = 0.7 + Math.random() * 0.2;
@@ -216,11 +221,13 @@ function update() {
         //  Collide the player and the stars with the platforms
         game.physics.arcade.collide(player, platforms);
         game.physics.arcade.collide(player, platformsGris);
+        game.physics.arcade.collide(vidas,  platforms);
         //game.physics.arcade.collide(stars, platforms);
 
         //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
         game.physics.arcade.overlap(player, stars, collectStar, null, this);
         game.physics.arcade.overlap(player, meteoritos, collectMeteorito, null, this);
+        game.physics.arcade.overlap(player, vidas, collectVida, null, this);
         game.physics.arcade.overlap(player, heaven, endNivel, null, this);
         game.physics.arcade.overlap(platforms, meteoritos, muereMeteorito, null,this);
 
@@ -262,6 +269,7 @@ function update() {
 function updateTiempo(){
     tiempo++;
     tiempoText.setText('Tiempo: '+tiempo);
+    if (tiempo == 10) lanzarVida();
 }
 
 function collectStar (player, star) {
@@ -296,21 +304,33 @@ function collectMeteorito (player, meteorito) {
                 game.time.events.remove(timer);
                 reiniciarNivel();
             } else {
-                player.loadTexture('dude_bad'+player.vidas);
+                if (player.vidas>2) {
+                    player.loadTexture('dude_bad2');
+                } else {
+                    player.loadTexture('dude_bad'+player.vidas);
+                }
             }
         }
 
 }
 
+function collectVida (player, vida) {
+    player.vidas=player.vidas+1;
+    scoreText.text = 'Vidas: ' + player.vidas;
+    vida.kill();
+}
+
 function endNivel (player, heaven) {
-    player.kill();
-    game.time.events.remove(timer);
-    nivelCompletado(tiempo, player.vidas);
+    if (player.vidas>0) {
+        player.kill();
+        game.time.events.remove(timer);
+        nivelCompletado(tiempo, player.vidas);
+    }
 }
 
 function muereMeteorito(platform,meteorito){
     meteorito.kill();
-    lanzarMeteorito(50);
+    lanzarMeteorito(gravedad);
 }
 
 
@@ -325,7 +345,7 @@ function lanzarMeteorito(gravedad){
 
 
     //  Let gravity do its thing
-    meteorito.body.gravity.y = gravedad;
+    meteorito.body.gravity.y = gravedad + (gravedad * Math.random() * 0.2);;
 
     //  This just gives each meteorito a slightly random bounce value
     //meteorito.body.bounce.y = 0.7 + Math.random() * 0.2;
@@ -333,4 +353,10 @@ function lanzarMeteorito(gravedad){
 
 
     
+}
+
+function lanzarVida(){
+    var i=Math.floor((Math.random()*(game.world.width-2)+1));
+    var vida = vidas.create(i,0,'vida');
+    vida.body.gravity.y = 100;
 }

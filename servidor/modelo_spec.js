@@ -9,7 +9,7 @@ describe("El juego niveles inicialmente...", function() {
 	});
 
 	it("tiene una colección de niveles y usuarios", function() {
-		expect(juego.niveles.length).toEqual(0);
+		expect(juego.niveles.length).toEqual(4);
 		expect(juego.usuarios.length).toEqual(0);
   });
 
@@ -52,7 +52,7 @@ describe("El juego niveles inicialmente...", function() {
     expect(usu.id).toEqual(id);
     juego.eliminarUsuario(id);
     usu=juego.obtenerUsuario(id);
-    expect(usuario).toBeUndefined();
+    expect(usu).toBeUndefined();
   });
 
   xit("Pendiente de hacer");

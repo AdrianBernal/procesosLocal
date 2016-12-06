@@ -61,7 +61,7 @@ function confirmarUsuario(id,key,nombre,password){
 
 	request(options,function(error,response,body){
 		if (!error && response.statusCode==200){
-			console.log("Usuario "+nombre+" confirmado \n");
+			console.log("Usuario "+nombre+" no es confirmado \n");
 			iniciarSesion(id,key,nombre,password);
 		}
 		else{
@@ -293,4 +293,4 @@ function eliminarUsuario2(id,key,nombre,password){
 	});
 }
 
-crearUsuario('Pepe6','pepe@pepe.com','pepe');
+crearUsuario('Pepe7','pepe@pepe.com','pepe');
