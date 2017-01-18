@@ -12,6 +12,8 @@
     "nodemailer": "^2.6.4",
     "nodemailer-sendgrid-transport": "^0.2.0",
     "ntwitter": "^0.5.0",
+    "path": "^0.12.7",
+    "socket.io": "^1.7.2",
     "underscore": "^1.7.0"
   },
   "devDependencies": {},

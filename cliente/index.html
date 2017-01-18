@@ -1,15 +1,14 @@
 <!doctype html> 
-<html lang="en"> 
+<html lang="es"> 
 <head> 
 	<meta charset="UTF-8" />
     <title>Juego</title>
 
-    <script type="text/javascript" src="lib/phaser.min.js" ></script>
+    <script type="text/javascript" src="lib/phaser.js" ></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="lib/jquery.cookie.js" ></script>
 
-    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon.ico">
@@ -19,10 +18,14 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
     <!-- FIN DataTables -->
 
+    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+
     <!-- Login y Registro -->
         <!-- Website Font style -->
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
     <!-- FIN Login y Registro -->
+
+    <link rel="stylesheet" href="./css/style.css">
     
 </head>
 <body>
@@ -34,12 +37,17 @@
             <ul class="nav navbar-nav">
                 <li id="inicioTab" class="active"><a onclick="inicio()" href="#"><i class="fa fa-home fa-fw" aria-hidden="true"></i>&nbsp;Inicio</a></li>
                 <li id="resultadosTab"><a onclick="obtenerResultados(true)" href="#"><i class="fa fa-bar-chart fa-fw" aria-hidden="true"></i>&nbsp;Resultados</a></li>
-                <li id="modificarTab"><a onclick="modificarPerfil()" href="#"><i class="fa fa-user fa-fw" aria-hidden="true"></i>&nbsp;Modificar perfil</a></li>
+                <li id="modificarTab"><a onclick="modificarPerfil()" href="#"><i class="fa fa-user fa-fw" aria-hidden="true"></i>&nbsp;Modificar perfil</a></l>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
                 <li><a onclick="reset()" href="#"><i class="fa fa-sign-out fa-fw" aria-hidden="true"></i>&nbsp;Salir</a></li>
             </ul>
         </div>
     </nav>
-    <div class="container-fluid">
+    <div id="content">
+    </div>
+    <div id="background"></div>
+    <!--<div class="container-fluid">
         <div class="row">
             <div class="col-sm-4">
                 <div id="control"></div>
@@ -49,9 +57,8 @@
                 <div id="juegoId"></div>
             </div>
         </div>
-    </div>
+    </div>-->
     <script type="text/javascript" src="js/control-juego.js" ></script>
     <script type="text/javascript" src="js/juego.js" ></script>
-    <script type="text/javascript">inicio();</script>  
 </body>
 </html>

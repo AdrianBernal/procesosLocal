@@ -3,20 +3,21 @@ var fs=require("fs");
 var exp=require("express");
 var app=exp();
 var bodyParser=require("body-parser");
-var mongo=require("mongodb").MongoClient;
-var ObjectId=require("mongodb").ObjectId;
 var modelo=require("./servidor/modelo.js");
 var cifrado=require("./servidor/cifrado.js");
 var moduloEmail=require('./servidor/email.js');
-var persistencia=require('./servidor/persistencia.js');
+var _ = require("underscore");
+var server = require('http').createServer(app);
+var io=require('socket.io')(server);
 
 
-var fm=new modelo.JuegoFM("./servidor/coordenadas.json");
+
+var fm=new modelo.JuegoFM("./servidor/tilemaps");
 var juego=fm.makeJuego(fm.juego,fm.array);
-
 var usuariosCol;
 var resultadosCol;
 var limboCol;
+var sockets=[];
 
 app.set('port', (process.env.PORT || 5000));
 
@@ -26,7 +27,6 @@ app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
 
 app.get("/",function(request,response){
-	console.log(request.get('host'));
 	var contenido=fs.readFileSync("./cliente/index.html");
 	response.setHeader("Content-type","text/html");
 	response.locals.name='Nombre de prueba';
@@ -37,71 +37,74 @@ app.post("/signup",function(request,response){
 	var nombre = request.body.nombre;
 	var email = request.body.email;
 	var password = request.body.password;
-	var passwordCifrada = cifrado.encrypt(password);
-	limboCol.find({nombre:nombre}).toArray(function(error,usr){	
-		if (usr.length>0){
-			response.send({nombre:undefined});
+	var passwordCifrada = cifrado.encrypt(password)
+	juego.nuevoUsuario(new modelo.Usuario(nombre,email,passwordCifrada),function(usuario){
+		if (usuario!=undefined){
+			moduloEmail.enviarEmail(usuario);
+			response.send(limpiarUsuario(usuario));
 		} else {
-			usuariosCol.find({nombre:nombre}).toArray(function(error,usr){	
-				if (usr.length>0){
-					response.send({nombre:undefined});
-				} else {
-					var usuario=new modelo.Usuario(nombre,email,passwordCifrada);
-					//insertarUsuarioLimbo(usuario,response);
-					persistencia.insertarUsuario(limboCol,usuario,function(usu,result){
-						moduloEmail.enviarEmail(usu);
-						response.send(limpiarUsuario(usu));
-					});
-				}
-			});
+			response.send({nombre:undefined});
 		}
 	});
 });
 
-app.get("/comprobarUsuario/:id",function(request,response){
-	var id = request.params.id;
-	var usuario = juego.obtenerUsuario(id);
-	var json={nivel:-1};
+app.post("/recordar",function(request,response){
+	var nombre = request.body.nombre;
+	var password = generar(8);
+	var passwordCifrada = cifrado.encrypt(password);
+	var usuario = juego.obtenerUsuarioPorNombre(nombre);
 	if (usuario!=undefined) {
-		json=JSON.stringify(limpiarUsuario(usuario));
-		response.send(json);
-	} else {
-		usuariosCol.find({_id:ObjectId(id)}).toArray(function(error,usr){
-			if (usr.length>0){
-				var usuario=usr[0];
-				juego.agregarUsuario(usuario);
-				json=JSON.stringify(limpiarUsuario(usuario));
-				response.send(json);
+		usuario.actualizar(usuario.nombre,passwordCifrada,function(usuarioActualizado){
+			if (usuario!=undefined){
+				moduloEmail.enviarEmailRecordar(usuario, password);
+				var usuarioAux=limpiarUsuario(usuario);
+				//ToDo: Comentar la siguiente línea para poner en producción.
+				/*Línea para que funcionen los test*/usuarioAux.password=password;/*Fín línea para test*/
+				response.send(usuarioAux);
 			} else {
-				response.send(json);
+				response.send({nombre:undefined});
 			}
 		});
-	}	
-})
+	} else {
+		response.send({nombre:undefined});
+	}
+});
 
-app.get('/nivelCompletado/:id/:tiempo/:vidas',function(request,response){
-	var id=request.params.id;
-	var tiempo=request.params.tiempo;
-	var vidas=request.params.vidas;
-	var usuario=juego.obtenerUsuario(id);
-	var json={'nivel':-1}
-	if (usuario!=undefined){
-		insertarResultado(new modelo.Resultado(usuario.nombre,usuario.nivel,tiempo,vidas,usuario.intentos));
-		usuario.nivel+=1;
-		usuario.intentos=0;
-		usuariosCol.update({_id:ObjectId(id)}, {$set: {nivel:usuario.nivel,intentos:usuario.intentos}});
-		json=limpiarUsuario(usuario);	
+app.get("/comprobarUsuario/:id",function(request,response){
+	var id = request.params.id;
+	var json={nivel:-1};
+	var usuario = juego.obtenerUsuarioPorId(id);
+	if (usuario!=undefined && usuario.activado) {
+		juego.agregarUsuario(usuario);
+		json=JSON.stringify(limpiarUsuario(usuario));
 	}
 	response.send(json);
+})
+
+app.get('/nivelCompletado/:id/:tiempo/:vidas/:score',function(request,response){
+	var id=request.params.id;
+	var tiempo=parseInt(request.params.tiempo);
+	var vidas=parseInt(request.params.vidas);
+	var score=parseInt(request.params.score);
+	var usuario=juego.obtenerUsuarioPorId(id);
+	var json={'nivel':-1}
+	if (usuario!=undefined){
+		juego.agregarResultado(new modelo.Resultado(usuario.nombre,usuario.nivel,tiempo,vidas,usuario.intentos,score),function(resultadoInsertado){
+			usuario.nivelCompletado();
+			json=limpiarUsuario(usuario);
+			response.send(json);
+		});
+	} else {
+		response.send(json);
+	}
 });
 
 app.get('/sumarIntento/:id',function(request,response){
 	var id=request.params.id;
-	var usuario=juego.obtenerUsuario(id);
+	var usuario=juego.obtenerUsuarioPorId(id);
 	var json={'intentos':-1}
 	if (usuario!=undefined){
-		usuario.intentos+=1;
-		usuariosCol.update({_id:ObjectId(id)}, {$set: {intentos:usuario.intentos}});		
+		usuario.sumarIntento();		
 		json=JSON.stringify(limpiarUsuario(usuario));
 	}
 	response.send(json);
@@ -109,13 +112,11 @@ app.get('/sumarIntento/:id',function(request,response){
 
 app.get('/resetNiveles/:id',function(request,response){
 	var id=request.params.id;
-	var usuario=juego.obtenerUsuario(id);
+	var usuario=juego.obtenerUsuarioPorId(id);
 	var json={'nivel':-1}
 	if (usuario!=undefined){
-		usuario.nivel=0;
-		usuario.intentos=0;
-		usuariosCol.update({_id:ObjectId(id)}, {$set: {nivel:usuario.nivel}});		
-		json={'nivel':usuario.nivel};
+		usuario.resetNiveles();	
+		json=limpiarUsuario(usuario);
 	}
 	response.send(json);
 });
@@ -128,19 +129,27 @@ app.get('/obtenerResultados/',function(request,response){
 	response.send(json);
 });
 
+app.get('/obtenerUsuariosConectados/',function(request,response){
+	var usuarios=[];
+	if (juego!=undefined){
+		juego.usuariosConectados.forEach(function(usuario){
+			usuarios.push(limpiarUsuario(usuario));
+		});
+	}
+	response.send(usuarios);
+});
+
 app.post('/login',function(request,response){
 	var nombre=request.body.nombre;
 	var password=request.body.password;
 	var passwordCifrada = cifrado.encrypt(password);
-	usuariosCol.find({nombre:nombre,password:passwordCifrada}).toArray(function(error,usr){
-		if (usr.length==0){
-			response.send({'nombre':undefined});
-		} else {
-			var usuario=usr[0];
-			juego.agregarUsuario(usuario);
-			response.send(limpiarUsuario(usuario));
-		}
-	});
+	var usuario = juego.obtenerUsuarioPorNombre(nombre);
+	if (usuario!=undefined && usuario.activado && usuario.password==passwordCifrada) {
+		juego.agregarUsuario(usuario);
+		response.send(limpiarUsuario(usuario));
+	} else {
+		response.send({'nombre':undefined});
+	}
 });
 
 app.delete("/eliminarUsuario/:id",function(request,response){
@@ -148,25 +157,16 @@ app.delete("/eliminarUsuario/:id",function(request,response){
 	var password=request.body.password;
 	var passwordCifrada = cifrado.encrypt(password);
 	var json={'resultados':-1};
-	usuariosCol.remove({_id:ObjectId(id), password:passwordCifrada},function(err,result){
-  		if (result.result.n==0){
-    		console.log("No se pudo eliminar el usuario");
-  		} else {
-   			json={"resultados":1};
-   			console.log("Usuario eliminado");
-   			var usuario=juego.obtenerUsuario(id);
-   			resultadosCol.remove({nombre:usuario.nombre},function(err,result){
-				if (result.result.n==0){
-			    	console.log("No se pudo eliminar los resultados");
-			  	} else {
-			  		juego.eliminarResultado(usuario.nombre);
-			   		console.log("Resultados eliminados");
-			  	}
-			});
-			juego.eliminarUsuario(id);
-  		}
-  		response.send(json);
- 	});
+	var usuario = juego.obtenerUsuarioPorId(id);
+	if (usuario!=undefined && usuario.password==passwordCifrada) {
+		juego.bajaUsuario(usuario,function(usuarioEliminado){
+			json={"resultados":1};
+			console.log("Usuario eliminado: "+usuarioEliminado.nombre);
+			response.send(json);
+		});
+	} else {
+		response.send(json);
+	}
 });
 
 app.post('/actualizarUsuario',function(request,response){
@@ -177,22 +177,24 @@ app.post('/actualizarUsuario',function(request,response){
 	var passwordNew=request.body.passwordNew;
 	var passwordNewCifrada=cifrado.encrypt(passwordNew);
 	var json={'nombre':undefined};
-	if (nombre!='' && passwordOld!='' && passwordNew!='') {
-		usuariosCol.update({_id:ObjectId(id),password:passwordOldCifrada}, {$set: {nombre:nombre,password:passwordNewCifrada}},function(err,result){
-			if (result.result.n!=0){
-		   		json=juego.obtenerUsuario(id);
-		   		json.nombre=nombre
-	 		}
-		  	response.send(limpiarUsuario(json));
+	var usuario = juego.obtenerUsuarioPorId(id);
+	if (nombre && passwordOld && passwordNew && usuario!=undefined && usuario.password==passwordOldCifrada) {
+		var nombreOld=usuario.nombre;
+		usuario.actualizar(nombre,passwordNewCifrada,function(usuarioActualizado){
+			var resultados=juego.obtenerResultadosPorNombre(nombreOld);
+			resultados.forEach(function(resultado){
+				resultado.actualizar(nombre);
+			});
+			response.send(limpiarUsuario(usuarioActualizado));
 		});
 	} else {
 		response.send(json);
 	}
 });
 
-app.get('/pedirNivel/:uid',function(request,response){
-	var uid=request.params.uid;
-	var usuario=juego.obtenerUsuario(uid);
+app.get('/pedirNivel/:id',function(request,response){
+	var id=request.params.id;
+	var usuario=juego.obtenerUsuarioPorId(id);
 	var json={'nivel':-1};
 	if (usuario && usuario.nivel<juego.niveles.length){
 		response.send(juego.niveles[usuario.nivel]);
@@ -201,111 +203,81 @@ app.get('/pedirNivel/:uid',function(request,response){
 	}
 });
 
+app.get('/salir/:id',function(request,response){
+	var id=request.params.id;
+	var json={id:undefined};
+	var usuario=juego.obtenerUsuarioPorId(id);
+	if (usuario!=undefined) {
+		json=limpiarUsuario(usuario);
+		juego.eliminarUsuario(usuario);
+	}
+	response.send(json);
+});
+
 app.get("/confirmarUsuario/:nombre/:key",function(request,response){
 	var nombre = request.params.nombre;
 	var key = request.params.key;
-
-	limboCol.find({nombre:nombre,key:key}).toArray(function(error,usr){	
-		if (usr.length==0){
-			console.log("El usuario no exisste");
-			response.send('<h1>La cuenta ya esta activada');
-		} else {
-			//insertarUsuario(usr[0],response);
-			persistencia.insertarUsuario(usuariosCol,usr[0],function(usu){
+	var usuario = juego.obtenerUsuarioPorNombre(nombre);
+	if (usuario!=undefined) {
+		usuario.activar(key,function(usuario){
+			if (usuario==undefined) {
+				response.send('<h1>La cuenta ya esta activada');
+			} else {
 				response.redirect('/');
-				persistencia.eliminarUsuario(limboCol,usu);
-				juego.agregarUsuario(usu);
-			});
-		}
-	});
-});
-
-// function insertarUsuario(usu,response){
-// 	usuariosCol.insert(usu,function(err){
-// 		if(err){
-// 			console.log("error");
-// 		} else {
-// 			console.log("Nuevo usuario creado");
-// 			limboCol.remove({key:usu.key},function(error,result){
-// 				if(!error){
-// 					console.log('Usuario eliminado del limbo');
-// 				}
-// 			});
-// 			juego.agregarUsuario(usu);
-// 			response.redirect('/');
-// 			//ToDo: Poner cuenta activada.
-// 		}
-// 	});
-// }
-
-// function insertarUsuarioLimbo(usu,response){
-// 	limboCol.insert(usu,function(err,result){
-// 		var json={'nombre':undefined};
-// 		if(err){
-// 			console.log("error");
-// 		} else {
-// 			console.log("Nuevo usuario creado");
-// 			moduloEmail.enviarEmail(usu);
-// 			json=limpiarUsuario(result["ops"][0]);
-// 		}
-// 		response.send(JSON.stringify(json));
-// 	});
-// }
-
-function insertarResultado(resultado){
-	juego.agregarResultado(resultado);
-	resultadosCol.insert(resultado);
-}
-
-function limpiarUsuario(usuario){
-	//ToDo: Descomentar para poner en producción
-	//usuario.key=undefined;
-	usuario.email=undefined;
-	usuario.password=undefined;
-	return usuario;
-};
-
-function cargarResultados(){
-	juego.resultados=[];
-	resultadosCol.find().forEach(function (result){juego.agregarResultado(result)});
-}
-
-app.listen(app.get('port'), function() {
-  console.log('Node app is running on port', app.get('port'));
-});
-
-
-mongo.connect("mongodb://pepe:pepe@ds048719.mlab.com:48719/usuarioscn", function(err, db) {
-//mongo.connect("mongodb://127.0.0.1:27017/usuarioscn", function(err, db) {
-	if (err){
- 		console.log("No pudo conectar a la base de datos");
- 	} else {
-		console.log("Conectado a Mongo: usuarioscn");
-		db.collection("usuarios",function(error,col){
-			if (error){
-				console.log("No pudo obtener la colección usuarios");
-			} else {
-				console.log("Tenemos la colección usuario");
-				usuariosCol=col;
 			}
 		});
-		db.collection("resultados",function(error,col){
-			if (error){
-				console.log("No pudo obtener la colección resultados");
-			} else {
-				console.log("tenemos la colección resultados");
-				resultadosCol=col;
-				cargarResultados();
-			}
-		});
-		db.collection("limbo",function(error,col){
-			if (error){
-				console.log("No pudo obtener la colección limbo");
-			} else {
-				console.log("Tenemos la colección limbo");
-				limboCol=col;
-			}
-		});
+	} else {
+		response.send('<h1>La cuenta no existe');
 	}
 });
 
+
+function limpiarUsuario(usuario){
+	//ToDo: Descomentar para poner en producción
+	var usuarioClonado = _.clone(usuario);
+	//usuarioClonado.key=undefined;
+	usuarioClonado.email=undefined;
+	usuarioClonado.password=undefined;
+	return usuarioClonado;
+};
+
+function generar(longitud){
+  var caracteres = "abcdefghijkmnpqrtuvwxyzABCDEFGHIJKLMNPQRTUVWXYZ2346789";
+  var contraseña = "";
+  for (i=0; i<longitud; i++) contraseña += caracteres.charAt(Math.floor(Math.random()*caracteres.length));
+  return contraseña;
+}
+
+io.on('connection', function (socket) {
+	console.log("conectado:"+socket.id);
+
+	socket.join("conectados");
+
+	socket.on("updateDatos",function(usuario){
+		usuario.socketid=socket.id;
+  		io.to("conectados").emit('updateDatos', usuario);
+	});
+
+  	socket.on('updatePosicion', function (usuario) {
+  		usuario.socketid=socket.id;
+  		io.to("posiciones").emit('updatePosicion', usuario);
+  		socket.join("posiciones");
+  	});
+
+  	socket.on("nojugando", function(usuario){
+  		socket.leave("posiciones");
+  		io.to("posiciones").emit('nojugando', {socketid:socket.id});
+  	});
+
+  	socket.on('disconnect', function() {
+	  	socket.leave("conectados");
+	  	io.to("conectados").emit('updateDatos', {socketid:socket.id});
+	  	console.log("desconectado:"+socket.id);
+  	});
+
+  	io.to("conectados").emit('updateDatos', {socketid:socket.id});
+});
+
+server.listen(app.get('port'), function() {
+  console.log('Node app is running on port', app.get('port'));
+});
