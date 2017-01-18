@@ -616,11 +616,13 @@ function configurarTile(tile){
             tileSprite.body.setSize(16,16,8,9);
             tileSprite.tipo="moneda";
             tileSprite.valor=10;
+            break;
         case 13: //moneda plata
             tileSprite=crearSpriteFromTile(coleccionable,tile);
             tileSprite.body.setSize(16,16,8,9);
             tileSprite.tipo="moneda";
             tileSprite.valor=5;
+            break;
         case 14: //moneda bronce
             tileSprite=crearSpriteFromTile(coleccionable,tile);
             tileSprite.body.setSize(16,16,8,9);
