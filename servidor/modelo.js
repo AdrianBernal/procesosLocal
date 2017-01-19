@@ -221,7 +221,6 @@ function Resultado(nombre,nivel,tiempo,vidas,intentos,score){
 function JuegoFM(directorio){
 	this.juego=new Juego();
 	this.array=leerCoordenadas(directorio);
-
 	this.makeJuego=function(){
 		this.array.forEach(function(nivel,i){
 			var nivel=new Nivel(i,nivel);
